@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="nl"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Booky Lokaal — Bookmarks</title>
+<style>
+:root{
+  --coral:#eb6e58; --coral-dark:#d85a44; --coral-light:#fde8e4;
+  --ink:#33373d; --ink-soft:#6b7280; --line:#e6e2de;
+  --paper:#ffffff; --bg:#faf8f6;
+  --accent2:#c98a2e; --accent3:#7a4d9e; --accent4:#3d8a6e;
+  --radius:7px;
+  --sans:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:14.5px}
+
+/* ---------- header ---------- */
+header{background:var(--coral);color:#fff;padding:0 26px;height:74px;display:flex;align-items:center;gap:26px}
+.logo{font-size:30px;font-weight:700;letter-spacing:-.5px;user-select:none}
+.logo .eye{display:inline-block;transform:translateY(2px)}
+.head-spacer{flex:1}
+header .hbtn{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.45);color:#fff;
+  border-radius:var(--radius);padding:8px 15px;font-size:13.5px;cursor:pointer;display:flex;align-items:center;gap:7px}
+header .hbtn:hover{background:rgba(255,255,255,.26)}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#9ef0b1;display:inline-block}
+
+/* ---------- toolbar ---------- */
+.toolbar{background:var(--paper);border-bottom:1px solid var(--line);padding:0 26px;display:flex;align-items:center;gap:4px;min-height:54px;flex-wrap:wrap}
+.tabs{display:flex;align-items:center;gap:2px;flex-wrap:wrap;flex:1;min-width:200px}
+.tab{position:relative;padding:16px 13px 14px;font-size:14.5px;color:var(--ink-soft);cursor:pointer;border:none;background:none;font-weight:600}
+.tab:hover{color:var(--ink)}
+.tab.active{color:var(--coral)}
+.tab.active::after{content:"";position:absolute;left:10px;right:10px;bottom:8px;height:3px;background:var(--coral);border-radius:2px}
+.tab.dragover{outline:2px dashed var(--coral);outline-offset:-4px;border-radius:6px}
+.toolbar .tbtn{border:1px solid var(--line);background:var(--paper);color:var(--ink-soft);border-radius:var(--radius);
+  padding:8px 13px;font-size:13.5px;cursor:pointer;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.toolbar .tbtn:hover{border-color:var(--coral);color:var(--coral)}
+.toolbar .tbtn.primary{border-color:var(--coral);color:var(--coral);font-weight:600}
+.searchwrap{position:relative}
+.searchwrap input{border:1px solid var(--line);border-radius:var(--radius);padding:9px 12px 9px 34px;font-size:13.5px;width:230px;background:var(--bg);color:var(--ink)}
+.searchwrap input:focus{outline:none;border-color:var(--coral);background:#fff}
+.searchwrap .mag{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-soft);pointer-events:none}
+
+/* ---------- board ---------- */
+main{padding:22px 26px 80px;max-width:1900px;margin:0 auto}
+.board{column-count:4;column-gap:22px}
+@media(max-width:1500px){.board{column-count:3}}
+@media(max-width:1100px){.board{column-count:2}}
+@media(max-width:720px){.board{column-count:1}.searchwrap input{width:150px}}
+
+.collection{break-inside:avoid;background:var(--paper);border:1px solid var(--line);border-radius:10px;
+  margin:0 0 22px;overflow:visible;box-shadow:0 1px 3px rgba(60,40,30,.05)}
+.col-head{display:flex;align-items:center;gap:8px;padding:13px 14px 11px;border-bottom:3px solid var(--hd,#999);cursor:default}
+.col-head .chev{cursor:pointer;color:var(--ink-soft);width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:5px;transition:transform .18s}
+.col-head .chev:hover{background:var(--bg)}
+.collection.closed .col-head .chev{transform:rotate(-90deg)}
+.col-title{font-size:17px;font-weight:700;flex:1;letter-spacing:-.2px;cursor:grab}
+.col-actions{display:flex;gap:2px;opacity:0;transition:opacity .15s}
+.col-head:hover .col-actions{opacity:1}
+.iconbtn{border:none;background:none;cursor:pointer;color:var(--ink-soft);width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.iconbtn:hover{background:var(--bg);color:var(--ink)}
+.col-body{padding:6px 6px 8px}
+.collection.closed .col-body{display:none}
+
+.bm{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:6px;position:relative}
+.bm:hover{background:var(--bg)}
+.bm.dragging{opacity:.35}
+.bm.dropbefore{box-shadow:0 -2px 0 var(--coral)}
+.fav{width:16px;height:16px;flex:none;border-radius:3px;object-fit:contain}
+.fav-letter{width:16px;height:16px;flex:none;border-radius:3px;background:var(--coral-light);color:var(--coral-dark);
+  font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;text-transform:uppercase}
+.bm a{color:var(--ink);text-decoration:none;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.bm a:hover{color:var(--coral);text-decoration:underline}
+.bm-actions{display:flex;gap:0;opacity:0}
+.bm:hover .bm-actions{opacity:1}
+.bm .grip{cursor:grab;color:#c9c4bf;font-size:13px;padding:0 1px}
+.addlink{display:flex;align-items:center;gap:8px;padding:7px 8px;color:var(--ink-soft);font-size:13px;cursor:pointer;border-radius:6px;border:none;background:none;width:100%;text-align:left}
+.addlink:hover{background:var(--coral-light);color:var(--coral-dark)}
+.col-body.dragover{background:var(--coral-light);border-radius:0 0 9px 9px}
+.empty-col{color:var(--ink-soft);font-size:13px;padding:8px;font-style:italic}
+
+/* ---------- search results ---------- */
+.results{max-width:760px;margin:0 auto}
+.results h2{font-size:18px;margin:6px 0 16px;color:var(--ink)}
+.crumb{font-size:11.5px;color:var(--ink-soft);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:1px 7px;margin-left:8px;white-space:nowrap}
+.results .bm{background:var(--paper);border:1px solid var(--line);margin-bottom:7px;padding:10px 12px;border-radius:8px}
+.noresults{color:var(--ink-soft);text-align:center;padding:50px 0;font-size:15px}
+
+/* ---------- menus & modals ---------- */
+.menu{position:fixed;background:var(--paper);border:1px solid var(--line);border-radius:9px;box-shadow:0 8px 28px rgba(40,30,25,.16);
+  min-width:200px;padding:5px;z-index:300;font-size:14px}
+.menu button{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;text-align:left;
+  padding:9px 12px;cursor:pointer;border-radius:6px;color:var(--ink);font-size:13.5px}
+.menu button:hover{background:var(--bg)}
+.menu button.danger{color:#c0392b}
+.menu hr{border:none;border-top:1px solid var(--line);margin:5px 4px}
+.menu .mlabel{font-size:11px;color:var(--ink-soft);padding:6px 12px 2px;text-transform:uppercase;letter-spacing:.6px}
+
+.overlay{position:fixed;inset:0;background:rgba(40,32,28,.45);display:flex;align-items:flex-start;justify-content:center;z-index:400;padding:90px 16px 16px}
+.modal{background:var(--paper);border-radius:12px;width:430px;max-width:100%;padding:24px;box-shadow:0 18px 60px rgba(0,0,0,.25)}
+.modal h3{font-size:17px;margin-bottom:16px}
+.modal label{display:block;font-size:12.5px;color:var(--ink-soft);margin:12px 0 5px;font-weight:600}
+.modal input[type=text],.modal input[type=url],.modal select{width:100%;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;font-size:14px;background:var(--bg)}
+.modal input:focus,.modal select:focus{outline:none;border-color:var(--coral);background:#fff}
+.modal .mrow{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}
+.btn{border-radius:var(--radius);padding:9px 18px;font-size:14px;cursor:pointer;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+.btn:hover{background:var(--bg)}
+.btn.primary{background:var(--coral);border-color:var(--coral);color:#fff;font-weight:600}
+.btn.primary:hover{background:var(--coral-dark)}
+.btn.danger{background:#c0392b;border-color:#c0392b;color:#fff}
+
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;
+  padding:11px 20px;border-radius:9px;font-size:14px;z-index:500;box-shadow:0 6px 22px rgba(0,0,0,.3);opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.show{opacity:1}
+
+.filebar{display:flex;align-items:center;gap:12px;padding:10px 26px;font-size:13.5px;border-bottom:1px solid var(--line)}
+.filebar.warn{background:#fff7e0;color:#7a5b12}
+.filebar.ok{background:#eef8ef;color:#2d6b3a}
+.filebar .fbtn{border:1px solid currentColor;background:transparent;color:inherit;border-radius:var(--radius);
+  padding:6px 13px;font-size:13px;cursor:pointer;font-weight:600;white-space:nowrap}
+.filebar .fbtn:hover{background:rgba(0,0,0,.06)}
+
+.hint{color:var(--ink-soft);font-size:12.5px;margin-top:8px;line-height:1.5}
+:focus-visible{outline:2px solid var(--coral);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">b<span class="eye">👁</span>oky <span style="font-size:13px;font-weight:400;opacity:.85;margin-left:4px">lokaal</span></div>
+  <div class="head-spacer"></div>
+  <button class="hbtn" id="btnBackup" title="Backup &amp; herstel"><span class="status-dot" id="saveDot"></span> Backup</button>
+</header>
+
+<div class="toolbar">
+  <div class="tabs" id="tabs"></div>
+  <button class="tbtn" id="btnCatMenu" title="Categorie-opties">⋯</button>
+  <button class="tbtn primary" id="btnNewCat">＋ Nieuwe categorie</button>
+  <div class="searchwrap">
+    <span class="mag">🔎</span>
+    <input id="search" type="text" placeholder="Zoek in bookmarks…" autocomplete="off">
+  </div>
+</div>
+
+<div class="filebar" id="filebar" style="display:none"></div>
+
+<main>
+  <div class="board" id="board"></div>
+  <div class="results" id="results" style="display:none"></div>
+</main>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="fileImport" accept=".json,application/json" style="display:none">
+
+<script type="application/json" id="seed">{"categories":[],"activeCat":null}</script>
+<script>
+"use strict";
+/* pristine kopie van de pagina (vóór het renderen) voor 'Exporteer als app' */
+const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+/* ============================ state & opslag ============================ */
+const LS_KEY = "bookyLocal.v1";
+const COLORS = ["#eb6e58","#c98a2e","#7a4d9e","#3d8a6e","#3b6ea8","#b3486f"];
+let state;
+let fileHandle = null;     // FileSystemFileHandle van booky-data.json
+let fileLinked = false;
+const FS_SUPPORTED = "showSaveFilePicker" in window;
+
+function uid(){ return Math.random().toString(36).slice(2,10); }
+
+/* ---- IndexedDB: bewaart de verwijzing naar het opslagbestand ---- */
+function idb(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open("bookyLocal",1);
+    r.onupgradeneeded=()=>r.result.createObjectStore("kv");
+    r.onsuccess=()=>res(r.result);
+    r.onerror=()=>rej(r.error);
+  });
+}
+async function idbSet(k,v){ const db=await idb(); return new Promise((res,rej)=>{ const t=db.transaction("kv","readwrite"); t.objectStore("kv").put(v,k); t.oncomplete=res; t.onerror=()=>rej(t.error); }); }
+async function idbGet(k){ const db=await idb(); return new Promise((res,rej)=>{ const t=db.transaction("kv","readonly"); const q=t.objectStore("kv").get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }
+async function idbDel(k){ const db=await idb(); return new Promise((res,rej)=>{ const t=db.transaction("kv","readwrite"); t.objectStore("kv").delete(k); t.oncomplete=res; t.onerror=()=>rej(t.error); }); }
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw){ state = JSON.parse(raw); return; }
+  }catch(e){ console.warn("localStorage niet beschikbaar:", e); }
+  state = JSON.parse(document.getElementById("seed").textContent);
+}
+
+let saveTimer=null;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async ()=>{
+    saveTimer=null;
+    const json = JSON.stringify(state);
+    try{ localStorage.setItem(LS_KEY, json); }catch(e){}
+    if(fileLinked && fileHandle){
+      try{
+        const w = await fileHandle.createWritable();
+        await w.write(JSON.stringify(state,null,1));
+        await w.close();
+      }catch(e){
+        console.warn("schrijven naar bestand mislukt:", e);
+        fileLinked=false; renderFilebar();
+        toast("⚠️ Schrijven naar booky-data.json mislukt — koppel het bestand opnieuw");
+      }
+    }
+    if(gh){
+      try{
+        await ghPush();
+        if(ghStatus!=="ok"){ ghStatus="ok"; ghError=""; renderFilebar(); }
+        setDot(true);
+      }catch(e){
+        ghStatus="error"; ghError=e.message; setDot(false); renderFilebar();
+      }
+      return;
+    }
+    setDot(fileLinked || !!localStorage.getItem(LS_KEY));
+  },600);
+}
+function setDot(ok){
+  const d=document.getElementById("saveDot");
+  d.style.background = ok ? "#9ef0b1" : "#ffd24d";
+}
+
+/* ---- koppelen / lezen / herstellen van het opslagbestand ---- */
+function validState(d){ return d && Array.isArray(d.categories); }
+
+async function readFromFile(){
+  const f = await fileHandle.getFile();
+  const text = await f.text();
+  if(text.trim()){
+    const d = JSON.parse(text);
+    if(!validState(d)) throw new Error("booky-data.json heeft geen geldig formaat");
+    state = d;
+  }else{
+    // leeg/nieuw bestand: schrijf de huidige stand erin
+    const w = await fileHandle.createWritable();
+    await w.write(JSON.stringify(state,null,1));
+    await w.close();
+  }
+  fileLinked = true;
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
+  setDot(true); renderFilebar(); render();
+}
+
+async function linkFile(){
+  if(!FS_SUPPORTED){
+    toast("Deze browser ondersteunt geen bestandsopslag — gebruik Chrome of Edge");
+    return;
+  }
+  try{
+    const h = await window.showSaveFilePicker({
+      suggestedName:"booky-data.json",
+      types:[{description:"Booky data",accept:{"application/json":[".json"]}}]
+    });
+    fileHandle = h;
+    await idbSet("fileHandle", h);
+    await readFromFile();
+    toast("Gekoppeld aan "+h.name+" — wijzigingen worden nu naar dit bestand geschreven");
+  }catch(e){
+    if(e.name!=="AbortError"){ console.warn(e); toast("Koppelen mislukt: "+e.message); }
+  }
+}
+
+async function unlinkFile(){
+  fileHandle=null; fileLinked=false;
+  await idbDel("fileHandle");
+  renderFilebar(); save();
+  toast("Bestand ontkoppeld — opslag alleen nog in de browser");
+}
+
+async function initFile(){
+  if(!FS_SUPPORTED){ renderFilebar(); return; }
+  try{
+    const h = await idbGet("fileHandle");
+    if(!h){ renderFilebar(); return; }
+    fileHandle = h;
+    const perm = await h.queryPermission({mode:"readwrite"});
+    if(perm==="granted"){
+      await readFromFile();
+    }else{
+      renderFilebar("restore"); // toestemming opnieuw nodig (vereist een klik)
+    }
+  }catch(e){ console.warn(e); renderFilebar(); }
+}
+
+async function restoreAccess(){
+  try{
+    const perm = await fileHandle.requestPermission({mode:"readwrite"});
+    if(perm==="granted"){ await readFromFile(); toast("Bestandstoegang hersteld"); }
+    else toast("Geen toestemming gegeven");
+  }catch(e){ toast("Herstellen mislukt: "+e.message); }
+}
+
+function renderFilebar(mode){
+  const bar=document.getElementById("filebar");
+  bar.innerHTML=""; bar.style.display="flex";
+  const lbl=document.getElementById("btnBackup").firstChild.nextSibling;
+  if(gh){
+    if(ghStatus==="error"){
+      bar.className="filebar warn";
+      bar.append(
+        el("span",{style:"flex:1",text:"⚠️ Synchronisatie met GitHub mislukt ("+(ghError||"onbekende fout")+"). Controleer je internetverbinding of token."}),
+        el("button",{class:"fbtn",text:"Opnieuw proberen",onclick:()=>ghInit(true)}),
+        el("button",{class:"fbtn",text:"Instellingen",onclick:ghSettingsModal})
+      );
+      lbl.textContent=" GitHub ⚠";
+      return;
+    }
+    lbl.textContent=" GitHub ✓";
+    bar.style.display="none";
+    return;
+  }
+  if(fileLinked && fileHandle){
+    bar.style.display="none";
+    lbl.textContent=" "+fileHandle.name;
+    return;
+  }
+  lbl.textContent=" Backup";
+  if(mode==="restore"){
+    bar.className="filebar warn";
+    bar.append(
+      el("span",{style:"flex:1",text:"🔐 De browser vraagt opnieuw toestemming om naar booky-data.json te mogen schrijven."}),
+      el("button",{class:"fbtn",text:"Toegang herstellen",onclick:restoreAccess})
+    );
+  }else{
+    bar.className="filebar warn";
+    const msg = FS_SUPPORTED
+      ? "📁 Nog geen opslag ingesteld — wijzigingen staan nu alleen in deze browser. Kies een lokaal opslagbestand of stel GitHub-synchronisatie in."
+      : "📁 Nog geen opslag ingesteld — wijzigingen staan nu alleen in deze browser. Stel GitHub-synchronisatie in om je data op al je apparaten te gebruiken.";
+    bar.append(el("span",{style:"flex:1",text:msg}));
+    if(FS_SUPPORTED) bar.append(el("button",{class:"fbtn",text:"Opslagbestand koppelen",onclick:linkFile}));
+    bar.append(el("button",{class:"fbtn",text:"GitHub-synchronisatie",onclick:ghSettingsModal}));
+  }
+}
+
+/* ============================ GitHub-synchronisatie ============================ */
+const GH_KEY="bookyLocal.gh";
+let gh=null;            // {owner, repo, path, token}
+let ghSha=null;         // sha van de laatste bekende versie op GitHub
+let ghStatus="off";     // off | ok | error
+let ghError="";
+let lastPull=0;
+
+function loadGh(){ try{ gh=JSON.parse(localStorage.getItem(GH_KEY)||"null"); }catch(e){ gh=null; } }
+function ghHeaders(){ return {"Authorization":"Bearer "+gh.token,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"}; }
+function ghUrl(){ return "https://api.github.com/repos/"+gh.owner+"/"+gh.repo+"/contents/"+encodeURIComponent(gh.path); }
+
+function b64encodeUtf8(str){
+  const bytes=new TextEncoder().encode(str); let bin="";
+  for(let i=0;i<bytes.length;i+=0x8000) bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));
+  return btoa(bin);
+}
+function b64decodeUtf8(b64){
+  const bin=atob(b64.replace(/\s/g,"")); const bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+async function ghPull(){
+  const r=await fetch(ghUrl(),{headers:ghHeaders(),cache:"no-store"});
+  if(r.status===404) return null; // bestand bestaat nog niet op GitHub
+  if(r.status===401||r.status===403) throw new Error("token ongeldig of geen toegang ("+r.status+")");
+  if(!r.ok) throw new Error("GitHub gaf status "+r.status);
+  const j=await r.json();
+  ghSha=j.sha;
+  const d=JSON.parse(b64decodeUtf8(j.content));
+  if(!validState(d)) throw new Error("databestand op GitHub heeft geen geldig formaat");
+  return d;
+}
+
+async function ghPush(){
+  const body={message:"booky update "+new Date().toLocaleString("nl-NL"),
+              content:b64encodeUtf8(JSON.stringify(state,null,1))};
+  if(ghSha) body.sha=ghSha;
+  let r=await fetch(ghUrl(),{method:"PUT",headers:{...ghHeaders(),"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(r.status===409||r.status===422){
+    // versie op GitHub was nieuwer: haal de actuele sha op en schrijf nogmaals
+    const cur=await fetch(ghUrl(),{headers:ghHeaders(),cache:"no-store"});
+    if(cur.ok){ body.sha=(await cur.json()).sha;
+      r=await fetch(ghUrl(),{method:"PUT",headers:{...ghHeaders(),"Content-Type":"application/json"},body:JSON.stringify(body)});
+    }
+  }
+  if(r.status===401||r.status===403) throw new Error("token ongeldig of geen toegang ("+r.status+")");
+  if(!r.ok) throw new Error("GitHub gaf status "+r.status);
+  ghSha=(await r.json()).content.sha;
+}
+
+async function ghInit(showToast){
+  if(!gh) return;
+  try{
+    const remote=await ghPull();
+    if(remote){ state=remote; try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){} }
+    else { await ghPush(); } // eerste keer: zet de huidige verzameling op GitHub
+    ghStatus="ok"; ghError=""; lastPull=Date.now();
+    setDot(true); renderFilebar(); render();
+    if(showToast) toast(remote?"Data opgehaald van GitHub":"Eerste versie naar GitHub geschreven");
+  }catch(e){
+    ghStatus="error"; ghError=e.message; setDot(false); renderFilebar();
+  }
+}
+
+function ghSettingsModal(){
+  modal("GitHub-synchronisatie",[
+    {key:"owner",label:"GitHub-gebruikersnaam",value:gh?.owner||"",placeholder:"bijv. jandevries"},
+    {key:"repo",label:"Naam van je privé data-repository",value:gh?.repo||"booky-data",placeholder:"booky-data"},
+    {key:"token",label:"Personal access token (fine-grained)",value:gh?.token||"",placeholder:"github_pat_…",type:"password"}
+  ],vals=>{
+    const owner=vals.owner.trim(), repo=vals.repo.trim(), token=vals.token.trim();
+    if(!owner||!repo||!token){ toast("Vul alle drie de velden in"); return false; }
+    gh={owner,repo,path:"booky-data.json",token};
+    try{ localStorage.setItem(GH_KEY,JSON.stringify(gh)); }catch(e){}
+    ghSha=null; ghInit(true);
+  },"Opslaan & verbinden",
+  "Het token heeft alleen Contents-rechten op je data-repository nodig en wordt uitsluitend in deze browser bewaard. Op elk apparaat vul je dit één keer in.");
+}
+
+function ghDisable(){
+  gh=null; ghSha=null; ghStatus="off";
+  try{ localStorage.removeItem(GH_KEY); }catch(e){}
+  renderFilebar(); toast("GitHub-synchronisatie uitgeschakeld");
+}
+
+/* haal verse data op wanneer je terugkeert naar het tabblad (max. 1x per 20 s) */
+document.addEventListener("visibilitychange",async ()=>{
+  if(document.visibilityState!=="visible"||!gh||ghStatus!=="ok") return;
+  if(Date.now()-lastPull<20000||saveTimer) return;
+  try{
+    const before=ghSha, d=await ghPull();
+    lastPull=Date.now();
+    if(d&&ghSha!==before){ state=d; render(); toast("Bijgewerkt vanaf GitHub"); }
+  }catch(e){}
+});
+
+function activeCat(){
+  let c = state.categories.find(c=>c.id===state.activeCat);
+  if(!c && state.categories.length){ c = state.categories[0]; state.activeCat=c.id; }
+  return c;
+}
+
+/* ============================ helpers ============================ */
+function el(tag, attrs={}, ...kids){
+  const n=document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs)){
+    if(k==="class") n.className=v;
+    else if(k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else if(k==="text") n.textContent=v;
+    else n.setAttribute(k,v);
+  }
+  for(const kid of kids){ if(kid!=null) n.append(kid); }
+  return n;
+}
+function hostOf(url){ try{ return new URL(url).hostname; }catch(e){ return ""; } }
+function faviconEl(link){
+  const letter = el("span",{class:"fav-letter", text:(link.name||"?").trim().charAt(0)||"?"});
+  let src = link.icon;
+  if(!src){
+    const h = hostOf(link.url);
+    if(h) src = "https://www.google.com/s2/favicons?domain="+encodeURIComponent(h)+"&sz=32";
+  }
+  if(!src) return letter;
+  const img = el("img",{class:"fav", src, alt:"", loading:"lazy"});
+  img.addEventListener("error", ()=>img.replaceWith(letter));
+  return img;
+}
+function toast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2600);
+}
+function normalizeUrl(u){
+  u=u.trim();
+  if(!u) return u;
+  if(!/^[a-z][a-z0-9+.-]*:/i.test(u)) u="https://"+u;
+  return u;
+}
+
+/* ============================ render: tabs ============================ */
+function renderTabs(){
+  const wrap=document.getElementById("tabs");
+  wrap.innerHTML="";
+  for(const cat of state.categories){
+    const b = el("button",{class:"tab"+(cat.id===state.activeCat?" active":""), text:cat.name,
+      onclick:()=>{ state.activeCat=cat.id; save(); render(); },
+      ondblclick:()=>renameCategory(cat)});
+    // drop een bookmark op een tab om hem naar die categorie te verplaatsen (eerste collectie)
+    b.addEventListener("dragover",e=>{ if(dragLink){ e.preventDefault(); b.classList.add("dragover"); }});
+    b.addEventListener("dragleave",()=>b.classList.remove("dragover"));
+    b.addEventListener("drop",e=>{
+      b.classList.remove("dragover");
+      if(!dragLink) return;
+      e.preventDefault();
+      const target = cat.collections[0];
+      if(!target){ toast("Deze categorie heeft nog geen blok"); return; }
+      removeLinkById(dragLink.id);
+      target.links.push(dragLink.link);
+      save(); render();
+      toast(`Verplaatst naar ${cat.name} › ${target.name}`);
+    });
+    wrap.append(b);
+  }
+}
+
+/* ============================ render: board ============================ */
+let dragLink=null; // {id, link}
+let dragCol=null;  // collection id
+
+function renderBoard(){
+  const board=document.getElementById("board");
+  board.innerHTML="";
+  const cat=activeCat();
+  if(!cat){
+    board.append(el("div",{class:"noresults",text:"Geen categorieën — maak er één aan met ‘Nieuwe categorie’."}));
+    return;
+  }
+  cat.collections.forEach((col,ci)=>{
+    board.append(renderCollection(cat,col,ci));
+  });
+  // blok toevoegen
+  const addCol = el("button",{class:"addlink",style:"border:1.5px dashed var(--line);border-radius:10px;padding:14px;margin-bottom:22px;justify-content:center;break-inside:avoid;background:var(--paper)",
+    text:"＋ Nieuw blok", onclick:()=>addCollection(cat)});
+  board.append(addCol);
+}
+
+function renderCollection(cat,col,ci){
+  const color = COLORS[ci % COLORS.length];
+  const box = el("div",{class:"collection"+(col.collapsed?" closed":"")});
+  box.style.setProperty("--hd", color);
+
+  const chev = el("span",{class:"chev",title:"In/uitklappen",text:"▾",
+    onclick:()=>{ col.collapsed=!col.collapsed; save(); box.classList.toggle("closed"); }});
+  const title = el("span",{class:"col-title",text:col.name, draggable:"true", title:"Sleep om blokken te herordenen · dubbelklik om te hernoemen",
+    ondblclick:()=>renameCollection(col)});
+  title.addEventListener("dragstart",e=>{ dragCol=col.id; e.dataTransfer.effectAllowed="move"; });
+  title.addEventListener("dragend",()=>{ dragCol=null; });
+  box.addEventListener("dragover",e=>{ if(dragCol && dragCol!==col.id){ e.preventDefault(); }});
+  box.addEventListener("drop",e=>{
+    if(dragCol && dragCol!==col.id){
+      e.preventDefault();
+      const from = cat.collections.findIndex(c=>c.id===dragCol);
+      const to = cat.collections.findIndex(c=>c.id===col.id);
+      if(from>-1 && to>-1){ const [m]=cat.collections.splice(from,1); cat.collections.splice(to,0,m); save(); render(); }
+    }
+  });
+
+  const actions = el("div",{class:"col-actions"},
+    el("button",{class:"iconbtn",title:"Link toevoegen",text:"＋",onclick:()=>linkModal(col)}),
+    el("button",{class:"iconbtn",title:"Blok-opties",text:"⋯",onclick:(e)=>collectionMenu(e,cat,col)})
+  );
+  box.append(el("div",{class:"col-head"},chev,title,actions));
+
+  const body = el("div",{class:"col-body"});
+  body.addEventListener("dragover",e=>{ if(dragLink){ e.preventDefault(); body.classList.add("dragover"); }});
+  body.addEventListener("dragleave",e=>{ if(e.target===body) body.classList.remove("dragover"); });
+  body.addEventListener("drop",e=>{
+    body.classList.remove("dragover");
+    if(!dragLink) return;
+    e.preventDefault(); e.stopPropagation();
+    removeLinkById(dragLink.id);
+    col.links.push(dragLink.link);
+    save(); render();
+  });
+
+  if(col.links.length===0){
+    body.append(el("div",{class:"empty-col",text:"Nog geen links in dit blok."}));
+  }
+  col.links.forEach(link=>body.append(renderLink(col,link)));
+  body.append(el("button",{class:"addlink",text:"＋ Link toevoegen",onclick:()=>linkModal(col)}));
+  box.append(body);
+  return box;
+}
+
+function renderLink(col,link){
+  const row = el("div",{class:"bm"});
+  const grip = el("span",{class:"grip",text:"⋮⋮",title:"Sleep om te verplaatsen"});
+  row.draggable=true;
+  row.addEventListener("dragstart",e=>{
+    dragLink={id:link.id, link};
+    row.classList.add("dragging");
+    e.dataTransfer.effectAllowed="move";
+  });
+  row.addEventListener("dragend",()=>{ dragLink=null; row.classList.remove("dragging"); });
+  row.addEventListener("dragover",e=>{
+    if(dragLink && dragLink.id!==link.id){ e.preventDefault(); e.stopPropagation(); row.classList.add("dropbefore"); }
+  });
+  row.addEventListener("dragleave",()=>row.classList.remove("dropbefore"));
+  row.addEventListener("drop",e=>{
+    row.classList.remove("dropbefore");
+    if(!dragLink || dragLink.id===link.id) return;
+    e.preventDefault(); e.stopPropagation();
+    removeLinkById(dragLink.id);
+    const idx = col.links.findIndex(l=>l.id===link.id);
+    col.links.splice(idx,0,dragLink.link);
+    save(); render();
+  });
+
+  const a = el("a",{href:link.url,target:"_blank",rel:"noopener",text:link.name,title:link.url});
+  const acts = el("div",{class:"bm-actions"},
+    el("button",{class:"iconbtn",title:"Bewerken",text:"✎",onclick:()=>linkModal(col,link)}),
+    el("button",{class:"iconbtn",title:"Verwijderen",text:"🗑",onclick:()=>{
+      confirmModal(`Link “${link.name}” verwijderen?`,()=>{
+        col.links = col.links.filter(l=>l.id!==link.id); save(); render();
+      });
+    }})
+  );
+  row.append(grip, faviconEl(link), a, acts);
+  return row;
+}
+
+function removeLinkById(id){
+  for(const cat of state.categories)
+    for(const col of cat.collections){
+      const i=col.links.findIndex(l=>l.id===id);
+      if(i>-1){ col.links.splice(i,1); return; }
+    }
+}
+
+/* ============================ zoeken ============================ */
+document.getElementById("search").addEventListener("input",e=>{
+  const q=e.target.value.trim().toLowerCase();
+  const res=document.getElementById("results"), board=document.getElementById("board");
+  if(!q){ res.style.display="none"; board.style.display=""; return; }
+  board.style.display="none"; res.style.display=""; res.innerHTML="";
+  const hits=[];
+  for(const cat of state.categories)
+    for(const col of cat.collections)
+      for(const link of col.links)
+        if((link.name||"").toLowerCase().includes(q) || (link.url||"").toLowerCase().includes(q))
+          hits.push({cat,col,link});
+  res.append(el("h2",{text:`Zoekresultaten (${hits.length})`}));
+  if(!hits.length){ res.append(el("div",{class:"noresults",text:"Niets gevonden."})); return; }
+  for(const h of hits.slice(0,200)){
+    const row=el("div",{class:"bm"},
+      faviconEl(h.link),
+      el("a",{href:h.link.url,target:"_blank",rel:"noopener",text:h.link.name}),
+      el("span",{class:"crumb",text:`${h.cat.name} › ${h.col.name}`}));
+    res.append(row);
+  }
+});
+
+/* ============================ menus ============================ */
+let openMenu=null;
+function closeMenu(){ if(openMenu){ openMenu.remove(); openMenu=null; } }
+document.addEventListener("click",e=>{ if(openMenu && !openMenu.contains(e.target)) closeMenu(); },true);
+window.addEventListener("scroll",closeMenu,true);
+
+function showMenu(e,items){
+  closeMenu();
+  e.stopPropagation();
+  const m=el("div",{class:"menu"});
+  for(const it of items){
+    if(it==="hr"){ m.append(el("hr")); continue; }
+    if(it.label){ m.append(el("div",{class:"mlabel",text:it.label})); continue; }
+    m.append(el("button",{class:it.danger?"danger":"",text:it.text,onclick:()=>{ closeMenu(); it.fn(); }}));
+  }
+  document.body.append(m);
+  const r=e.target.getBoundingClientRect();
+  const mw=m.offsetWidth, mh=m.offsetHeight;
+  m.style.left=Math.min(r.left, innerWidth-mw-12)+"px";
+  m.style.top=Math.min(r.bottom+6, innerHeight-mh-12)+"px";
+  openMenu=m;
+}
+
+document.getElementById("btnCatMenu").addEventListener("click",e=>{
+  const cat=activeCat(); if(!cat) return;
+  const i=state.categories.indexOf(cat);
+  showMenu(e,[
+    {label:`Categorie: ${cat.name}`},
+    {text:"✎  Hernoemen",fn:()=>renameCategory(cat)},
+    {text:"▦  Nieuw blok",fn:()=>addCollection(cat)},
+    "hr",
+    {text:"←  Naar links verplaatsen",fn:()=>{ if(i>0){ state.categories.splice(i,1); state.categories.splice(i-1,0,cat); save(); render(); }}},
+    {text:"→  Naar rechts verplaatsen",fn:()=>{ if(i<state.categories.length-1){ state.categories.splice(i,1); state.categories.splice(i+1,0,cat); save(); render(); }}},
+    "hr",
+    {text:"🗑  Categorie verwijderen",danger:true,fn:()=>{
+      const n=cat.collections.reduce((s,c)=>s+c.links.length,0);
+      confirmModal(`Categorie “${cat.name}” met ${cat.collections.length} blokken en ${n} links verwijderen?`,()=>{
+        state.categories=state.categories.filter(c=>c.id!==cat.id);
+        state.activeCat=state.categories[0]?.id||null; save(); render();
+      });
+    }}
+  ]);
+});
+
+function collectionMenu(e,cat,col){
+  const i=cat.collections.indexOf(col);
+  showMenu(e,[
+    {label:`Blok: ${col.name}`},
+    {text:"＋  Link toevoegen",fn:()=>linkModal(col)},
+    {text:"✎  Hernoemen",fn:()=>renameCollection(col)},
+    "hr",
+    {text:"↑  Omhoog",fn:()=>{ if(i>0){ cat.collections.splice(i,1); cat.collections.splice(i-1,0,col); save(); render(); }}},
+    {text:"↓  Omlaag",fn:()=>{ if(i<cat.collections.length-1){ cat.collections.splice(i,1); cat.collections.splice(i+1,0,col); save(); render(); }}},
+    "hr",
+    {text:"🗑  Blok verwijderen",danger:true,fn:()=>{
+      confirmModal(`Blok “${col.name}” met ${col.links.length} links verwijderen?`,()=>{
+        cat.collections=cat.collections.filter(c=>c.id!==col.id); save(); render();
+      });
+    }}
+  ]);
+}
+
+document.getElementById("btnBackup").addEventListener("click",e=>{
+  const items=[{label:"Synchronisatie & opslag"}];
+  if(gh){
+    items.push({text:"☁️  GitHub: "+gh.owner+"/"+gh.repo+(ghStatus==="ok"?" ✓":" ⚠"),fn:ghSettingsModal});
+    items.push({text:"⬇  Nu ophalen van GitHub",fn:()=>{ghSha=null;ghInit(true);}});
+    items.push({text:"✎  Instellingen wijzigen",fn:ghSettingsModal});
+    items.push({text:"⛔  Synchronisatie uitschakelen",danger:true,fn:ghDisable});
+  }else{
+    items.push({text:"☁️  GitHub-synchronisatie instellen…",fn:ghSettingsModal});
+  }
+  if(fileLinked && fileHandle){
+    items.push({text:"💾  Lokaal bestand: "+fileHandle.name,fn:()=>{}});
+    items.push({text:"⛓  Lokaal bestand ontkoppelen",fn:unlinkFile});
+  }else if(FS_SUPPORTED){
+    items.push({text:"📁  Lokaal opslagbestand koppelen…",fn:linkFile});
+  }
+  items.push("hr",{label:"Backup & herstel"},
+    {text:"⬇  Exporteer JSON-backup",fn:exportJSON},
+    {text:"⬇  Exporteer als bookmarks-HTML",fn:exportNetscape},
+    {text:"🌐  Exporteer als app voor hosting (index.html)",fn:exportApp},
+    {text:"⬆  Importeer JSON-backup",fn:()=>document.getElementById("fileImport").click()},
+    "hr",
+    {text:"⟲  Reset naar ingebouwde backup (07-06-2026)",danger:true,fn:()=>{
+      confirmModal("Alles vervangen door de ingebouwde booky-backup van 7 juni 2026? Wijzigingen sindsdien gaan verloren.",()=>{
+        state=JSON.parse(document.getElementById("seed").textContent); save(); render();
+        toast("Hersteld naar de ingebouwde backup");
+      });
+    }});
+  showMenu(e,items);
+});
+
+/* ============================ modals ============================ */
+function modal(title, fields, onOk, okText="Opslaan", extra){
+  const inputs={};
+  const form=el("div");
+  for(const f of fields){
+    form.append(el("label",{text:f.label,for:"f_"+f.key}));
+    const inp=el("input",{type:f.type||"text",id:"f_"+f.key,value:f.value||"",placeholder:f.placeholder||""});
+    inputs[f.key]=inp; form.append(inp);
+  }
+  if(extra) form.append(el("div",{class:"hint",text:extra}));
+  const ov=el("div",{class:"overlay"});
+  const close=()=>ov.remove();
+  const ok=()=>{ const vals={}; for(const k in inputs) vals[k]=inputs[k].value; if(onOk(vals)!==false) close(); };
+  const box=el("div",{class:"modal"},
+    el("h3",{text:title}), form,
+    el("div",{class:"mrow"},
+      el("button",{class:"btn",text:"Annuleren",onclick:close}),
+      el("button",{class:"btn primary",text:okText,onclick:ok})));
+  ov.append(box);
+  ov.addEventListener("click",e=>{ if(e.target===ov) close(); });
+  box.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); ok(); } if(e.key==="Escape") close(); });
+  document.body.append(ov);
+  const first=Object.values(inputs)[0]; if(first){ first.focus(); first.select(); }
+}
+function confirmModal(msg,onYes){
+  const ov=el("div",{class:"overlay"});
+  const close=()=>ov.remove();
+  ov.append(el("div",{class:"modal"},
+    el("h3",{text:"Weet je het zeker?"}),
+    el("div",{style:"font-size:14px;color:var(--ink);line-height:1.5",text:msg}),
+    el("div",{class:"mrow"},
+      el("button",{class:"btn",text:"Annuleren",onclick:close}),
+      el("button",{class:"btn danger",text:"Verwijderen",onclick:()=>{ close(); onYes(); }}))));
+  ov.addEventListener("click",e=>{ if(e.target===ov) close(); });
+  document.body.append(ov);
+}
+
+function linkModal(col, link){
+  modal(link?"Link bewerken":"Link toevoegen",[
+    {key:"name",label:"Naam",value:link?.name||"",placeholder:"Bijv. MarketScreener"},
+    {key:"url",label:"URL",value:link?.url||"",placeholder:"https://…"}
+  ],vals=>{
+    const url=normalizeUrl(vals.url);
+    if(!url){ toast("Vul een URL in"); return false; }
+    const name=vals.name.trim()||hostOf(url)||url;
+    if(link){ link.name=name; if(link.url!==url){ link.url=url; link.icon=""; } }
+    else col.links.push({id:uid(),name,url,icon:""});
+    save(); render();
+  });
+}
+function addCollection(cat){
+  modal("Nieuw blok",[{key:"name",label:"Naam van het blok",placeholder:"Bijv. Main 5"}],vals=>{
+    const name=vals.name.trim(); if(!name) return false;
+    cat.collections.push({id:uid(),name,collapsed:false,links:[]});
+    save(); render();
+  },"Aanmaken");
+}
+function renameCollection(col){
+  modal("Blok hernoemen",[{key:"name",label:"Naam",value:col.name}],vals=>{
+    const n=vals.name.trim(); if(!n) return false;
+    col.name=n; save(); render();
+  });
+}
+function renameCategory(cat){
+  modal("Categorie hernoemen",[{key:"name",label:"Naam",value:cat.name}],vals=>{
+    const n=vals.name.trim(); if(!n) return false;
+    cat.name=n; save(); render();
+  });
+}
+document.getElementById("btnNewCat").addEventListener("click",()=>{
+  modal("Nieuwe categorie",[{key:"name",label:"Naam van de categorie",placeholder:"Bijv. Recepten"}],vals=>{
+    const n=vals.name.trim(); if(!n) return false;
+    const cat={id:uid(),name:n,collections:[{id:uid(),name:"Main",collapsed:false,links:[]}]};
+    state.categories.push(cat); state.activeCat=cat.id; save(); render();
+  },"Aanmaken");
+});
+
+/* ============================ import / export ============================ */
+function download(filename, text, type){
+  const blob=new Blob([text],{type});
+  const a=el("a",{href:URL.createObjectURL(blob),download:filename});
+  document.body.append(a); a.click(); a.remove();
+}
+function stamp(){ const d=new Date(); return d.toISOString().slice(0,10); }
+function exportJSON(){
+  download(`booky-lokaal-backup-${stamp()}.json`, JSON.stringify(state,null,1), "application/json");
+  toast("JSON-backup gedownload");
+}
+function exportApp(){
+  // Met GitHub-sync: exporteer de app ZONDER bookmarks (data staat veilig in je privé repo).
+  // Zonder sync: bak de huidige verzameling erin.
+  const stripped = !!gh;
+  const seedJson = stripped ? '{"categories":[],"activeCat":null}'
+                            : JSON.stringify(state).replace(/<\//g, "<\\/");
+  const out = PRISTINE.replace(
+    /(<script type="application\/json" id="seed">)[\s\S]*?(<\/script>)/,
+    () => `<script type="application/json" id="seed">${seedJson}<\/script>`
+  );
+  download("index.html", out, "text/html");
+  toast(stripped
+    ? "index.html gedownload (zonder bookmarks — die komen via GitHub)"
+    : "index.html gedownload met je bookmarks erin gebakken");
+}
+function escHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function exportNetscape(){
+  let out='<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks</H1>\n<DL><p>\n';
+  for(const cat of state.categories){
+    out+=`  <DT><H3>${escHtml(cat.name)}</H3>\n  <DL><p>\n`;
+    for(const col of cat.collections){
+      out+=`    <DT><H3>${escHtml(col.name)}</H3>\n    <DL><p>\n`;
+      for(const l of col.links){
+        const icon=l.icon?` ICON="${l.icon}"`:"";
+        out+=`      <DT><A HREF="${escHtml(l.url)}"${icon}>${escHtml(l.name)}</A>\n`;
+      }
+      out+="    </DL><p>\n";
+    }
+    out+="  </DL><p>\n";
+  }
+  out+="</DL><p>\n";
+  download(`booky-lokaal-bookmarks-${stamp()}.html`, out, "text/html");
+  toast("Bookmarks-HTML gedownload (importeerbaar in elke browser)");
+}
+document.getElementById("fileImport").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(!Array.isArray(d.categories)) throw new Error("geen geldig backup-bestand");
+      state=d; save(); render();
+      toast("Backup geïmporteerd");
+    }catch(err){ toast("Importeren mislukt: "+err.message); }
+  };
+  r.readAsText(f);
+  e.target.value="";
+});
+
+/* ============================ init ============================ */
+function render(){ renderTabs(); renderBoard(); }
+loadState();   // start direct vanuit browsercache/seed zodat de pagina meteen toont
+loadGh();
+render();
+renderFilebar();
+if(gh) ghInit();        // GitHub is leidend wanneer ingesteld
+else initFile();        // anders: lokaal opslagbestand (desktop)
+</script></body></html>
